@@ -5,8 +5,9 @@
  *
  * @return {object} The size and position of the provided element.
  */
-export default (element, scale) => {
+export default (element, _scale) => {
   const rect = element.getBoundingClientRect();
+  const scale = Number.isFinite(_scale) ? _scale : 1;
 
   return {
     height: (rect.height / scale),

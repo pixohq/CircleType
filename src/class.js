@@ -33,6 +33,7 @@ class CircleType {
   constructor(elem, splitter, scale) {
     this.element = elem;
     this.originalHTML = this.element.innerHTML;
+    this.scale = Number.isFinite(scale) ? scale : 1;
 
     const container = document.createElement('div');
     const fragment = document.createDocumentFragment();
@@ -51,7 +52,7 @@ class CircleType {
 
     this._fontSize = parseFloat(fontSize);
     this._lineHeight = parseFloat(lineHeight) || this._fontSize;
-    this._metrics = this._letters.map(letter => getRect(letter, scale));
+    this._metrics = this._letters.map(letter => getRect(letter, this.scale));
 
     const totalWidth = this._metrics.reduce((sum, { width }) => sum + width, 0);
     this._minRadius = (totalWidth / PI / 2) + this._lineHeight;
@@ -306,14 +307,18 @@ class CircleType {
    *
    * @private
    *
-   * @return {CircleType} This instance.
+   * @return {Promise<CircleType>} This instance.
    */
   _invalidate() {
-    cancelAnimationFrame(this._raf);
+    // cancelAnimationFrame(this._raf);
 
-    this._raf = requestAnimationFrame(() => {
-      this._layout();
-    });
+    // this._raf = requestAnimationFrame(() => {
+    //   this._layout();
+    // });
+
+    // return this;
+    // !
+    this._layout();
 
     return this;
   }
@@ -323,43 +328,81 @@ class CircleType {
    *
    * @private
    *
-   * @return {CircleType} This instance.
+   * @return {Promise<CircleType>} This instance.
    */
   _layout() {
-    const { _radius, _dir } = this;
-    const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
-    const origin = `center ${originY / this._fontSize}em`;
-    const innerRadius = _radius - this._lineHeight;
-    const { rotations, θ } = getLetterRotations(this._metrics, innerRadius);
+  //   const { _radius, _dir } = this;
+  //   const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
+  //   const origin = `center ${originY / this._fontSize}em`;
+  //   const innerRadius = _radius - this._lineHeight;
+  //   const { rotations, θ } = getLetterRotations(this._metrics, innerRadius);
 
-    this._letters.forEach((letter, index) => {
-      const { style } = letter;
-      const rotate = ((θ * -0.5) + rotations[index]) * _dir;
-      const translateX = (this._metrics[index].width * -0.5) / this._fontSize;
-      const transform = `translateX(${translateX}em) rotate(${rotate}deg)`;
+  //   this._letters.forEach((letter, index) => {
+  //     const { style } = letter;
+  //     const rotate = ((θ * -0.5) + rotations[index]) * _dir;
+  //     const translateX = (this._metrics[index].width * -0.5) / this._fontSize;
+  //     const transform = `translateX(${translateX}em) rotate(${rotate}deg)`;
 
-      style.position = 'absolute';
-      style.bottom = _dir === -1 ? 0 : 'auto';
-      style.left = '50%';
-      style.transform = transform;
-      style.transformOrigin = origin;
-      style.webkitTransform = transform;
-      style.webkitTransformOrigin = origin;
+  //     style.position = 'absolute';
+  //     style.bottom = _dir === -1 ? 0 : 'auto';
+  //     style.left = '50%';
+  //     style.transform = transform;
+  //     style.transformOrigin = origin;
+  //     style.webkitTransform = transform;
+  //     style.webkitTransformOrigin = origin;
+  //   });
+
+  //   if (this._forceHeight) {
+  //     const height = θ > 180 ? sagitta(_radius, θ) : sagitta(innerRadius, θ) + this._lineHeight;
+
+  //     this.container.style.height = `${height / this._fontSize}em`;
+  //   }
+
+  //   if (this._forceWidth) {
+  //     const width = chord(_radius, min(180, θ));
+
+  //     this.container.style.width = `${width / this._fontSize}em`;
+  //   }
+
+  //   return this;
+  // }
+    // !
+    return new Promise(resolve => {
+      const { _radius, _dir } = this;
+      const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
+      const origin = `center ${originY / this._fontSize}em`;
+      const innerRadius = _radius - this._lineHeight;
+      const { rotations, θ } = getLetterRotations(this._metrics, innerRadius);
+
+      this._letters.forEach((letter, index) => {
+        const { style } = letter;
+        const rotate = ((θ * -0.5) + rotations[index]) * _dir;
+        const translateX = (this._metrics[index].width * -0.5) / this._fontSize;
+        const transform = `translateX(${translateX}em) rotate(${rotate}deg)`;
+
+        style.position = 'absolute';
+        style.bottom = _dir === -1 ? 0 : 'auto';
+        style.left = '50%';
+        style.transform = transform;
+        style.transformOrigin = origin;
+        style.webkitTransform = transform;
+        style.webkitTransformOrigin = origin;
+      });
+
+      if (this._forceHeight) {
+        const height = θ > 180 ? sagitta(_radius, θ) : sagitta(innerRadius, θ) + this._lineHeight;
+
+        this.container.style.height = `${height / this._fontSize}em`;
+      }
+
+      if (this._forceWidth) {
+        const width = chord(_radius, min(180, θ));
+
+        this.container.style.width = `${width / this._fontSize}em`;
+      }
+
+      resolve(this);
     });
-
-    if (this._forceHeight) {
-      const height = θ > 180 ? sagitta(_radius, θ) : sagitta(innerRadius, θ) + this._lineHeight;
-
-      this.container.style.height = `${height / this._fontSize}em`;
-    }
-
-    if (this._forceWidth) {
-      const width = chord(_radius, min(180, θ));
-
-      this.container.style.width = `${width / this._fontSize}em`;
-    }
-
-    return this;
   }
 }
 
