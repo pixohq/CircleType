@@ -4,7 +4,7 @@ import sagitta from './utils/sagitta';
 import chord from './utils/chord';
 import getLetterRotations from './utils/getLetterRotations';
 
-const { PI, max, min } = Math;
+const { PI, min } = Math;
 
 /**
  * A CircleType instance creates a circular text element.
@@ -30,7 +30,7 @@ const { PI, max, min } = Math;
  *
  */
 class CircleType {
-  constructor(elem, splitter) {
+  constructor(elem, splitter, scale) {
     this.element = elem;
     this.originalHTML = this.element.innerHTML;
 
@@ -51,7 +51,7 @@ class CircleType {
 
     this._fontSize = parseFloat(fontSize);
     this._lineHeight = parseFloat(lineHeight) || this._fontSize;
-    this._metrics = this._letters.map(getRect);
+    this._metrics = this._letters.map(letter => getRect(letter, scale));
 
     const totalWidth = this._metrics.reduce((sum, { width }) => sum + width, 0);
     this._minRadius = (totalWidth / PI / 2) + this._lineHeight;

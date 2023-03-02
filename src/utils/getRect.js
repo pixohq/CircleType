@@ -5,13 +5,13 @@
  *
  * @return {object} The size and position of the provided element.
  */
-export default element => {
+export default (element, scale) => {
   const rect = element.getBoundingClientRect();
 
   return {
-    height: rect.height,
-    left: rect.left + window.pageXOffset,
-    top: rect.top + window.pageYOffset,
-    width: rect.width,
+    height: (rect.height / scale),
+    left: (rect.left / scale) + window.pageXOffset,
+    top: (rect.top / scale) + window.pageYOffset,
+    width: (rect.width / scale),
   };
 };
