@@ -101,7 +101,8 @@ class CircleType {
    */
   radius(value) {
     if (value !== undefined) {
-      this._radius = max(this._minRadius, value);
+      // this._radius = max(this._minRadius, value);
+      this._radius = value;
 
       this._invalidate();
 
