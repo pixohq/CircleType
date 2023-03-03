@@ -114,6 +114,35 @@ class CircleType {
   }
 
   /**
+   * Sets the desired text radius. The minimum radius is the radius required
+   * for the text to form a complete circle. If `value` is less than the minimum
+   * radius, the minimum radius is used.
+   *
+   * @name radius2
+   * @function
+   * @instance
+   * @memberof CircleType
+   * @param  {number} value A new text radius in pixels.
+   * @return {Promise<CircleType>}   The current instance.
+   *
+   * @example
+   * const circleType = new CircleType(document.getElementById('myElement'));
+   *
+   * // Set the radius to 150 pixels.
+   * circleType.radius2(150);
+   */
+  radius2(value) {
+    if (value !== undefined) {
+      // this._radius = max(this._minRadius, value);
+      this._radius = value;
+
+      return this._invalidate2();
+    }
+
+    return this._radius;
+  }
+
+  /**
    * Gets the text direction. `1` is clockwise, `-1` is counter-clockwise.
    *
    * @name dir
@@ -307,18 +336,70 @@ class CircleType {
    *
    * @private
    *
-   * @return {Promise<CircleType>} This instance.
+   * @return {CircleType} This instance.
    */
   _invalidate() {
-    // cancelAnimationFrame(this._raf);
+    cancelAnimationFrame(this._raf);
 
-    // this._raf = requestAnimationFrame(() => {
-    //   this._layout();
-    // });
+    this._raf = requestAnimationFrame(() => {
+      this._layout();
+    });
 
-    // return this;
-    // !
-    this._layout();
+    return this;
+  }
+
+  /**
+   * Invalidates the current state and schedules a task to refresh the layout
+   * in the next animation frame.
+   *
+   * @private
+   *
+   * @return {Promise<CircleType>} This instance.
+   */
+  _invalidate2() {
+    return this._layout2();
+  }
+
+  /**
+   * Rotates and positions the letters.
+   *
+   * @private
+   *
+   * @return {CircleType} This instance.
+   */
+  _layout() {
+    const { _radius, _dir } = this;
+    const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
+    const origin = `center ${originY / this._fontSize}em`;
+    const innerRadius = _radius - this._lineHeight;
+    const { rotations, θ } = getLetterRotations(this._metrics, innerRadius);
+
+    this._letters.forEach((letter, index) => {
+      const { style } = letter;
+      const rotate = ((θ * -0.5) + rotations[index]) * _dir;
+      const translateX = (this._metrics[index].width * -0.5) / this._fontSize;
+      const transform = `translateX(${translateX}em) rotate(${rotate}deg)`;
+
+      style.position = 'absolute';
+      style.bottom = _dir === -1 ? 0 : 'auto';
+      style.left = '50%';
+      style.transform = transform;
+      style.transformOrigin = origin;
+      style.webkitTransform = transform;
+      style.webkitTransformOrigin = origin;
+    });
+
+    if (this._forceHeight) {
+      const height = θ > 180 ? sagitta(_radius, θ) : sagitta(innerRadius, θ) + this._lineHeight;
+
+      this.container.style.height = `${height / this._fontSize}em`;
+    }
+
+    if (this._forceWidth) {
+      const width = chord(_radius, min(180, θ));
+
+      this.container.style.width = `${width / this._fontSize}em`;
+    }
 
     return this;
   }
@@ -330,43 +411,7 @@ class CircleType {
    *
    * @return {Promise<CircleType>} This instance.
    */
-  _layout() {
-  //   const { _radius, _dir } = this;
-  //   const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
-  //   const origin = `center ${originY / this._fontSize}em`;
-  //   const innerRadius = _radius - this._lineHeight;
-  //   const { rotations, θ } = getLetterRotations(this._metrics, innerRadius);
-
-  //   this._letters.forEach((letter, index) => {
-  //     const { style } = letter;
-  //     const rotate = ((θ * -0.5) + rotations[index]) * _dir;
-  //     const translateX = (this._metrics[index].width * -0.5) / this._fontSize;
-  //     const transform = `translateX(${translateX}em) rotate(${rotate}deg)`;
-
-  //     style.position = 'absolute';
-  //     style.bottom = _dir === -1 ? 0 : 'auto';
-  //     style.left = '50%';
-  //     style.transform = transform;
-  //     style.transformOrigin = origin;
-  //     style.webkitTransform = transform;
-  //     style.webkitTransformOrigin = origin;
-  //   });
-
-  //   if (this._forceHeight) {
-  //     const height = θ > 180 ? sagitta(_radius, θ) : sagitta(innerRadius, θ) + this._lineHeight;
-
-  //     this.container.style.height = `${height / this._fontSize}em`;
-  //   }
-
-  //   if (this._forceWidth) {
-  //     const width = chord(_radius, min(180, θ));
-
-  //     this.container.style.width = `${width / this._fontSize}em`;
-  //   }
-
-  //   return this;
-  // }
-    // !
+  _layout2() {
     return new Promise(resolve => {
       const { _radius, _dir } = this;
       const originY = _dir === -1 ? (-_radius + this._lineHeight) : _radius;
